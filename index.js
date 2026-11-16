@@ -49,9 +49,6 @@ const uploads = multer({ storage })
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));   // ← add this
-
-
-
 const authenticateAdmin = (req, res, next) => {
 
     try {
@@ -210,13 +207,15 @@ app.post("/admin/login", async (req, res) => {
 
 
 
-app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req, res) => {
-    let photoPath;
+
+app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req, res) => {
 
     try {
-        // 1. Check required fields
+
+        // 1. Get form data
         const { name, age, course, mobile, roll_no } = req.body;
 
+        // 2. Check required fields
         if (!name || !age || !course || !mobile || !roll_no) {
             return res.status(400).json({
                 success: false,
@@ -224,7 +223,7 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
             });
         }
 
-        // 2. Check photo
+        // 3. Check student photo
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -232,9 +231,7 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
             });
         }
 
-        photoPath = req.file.path;
-
-        // 3. Validate age
+        // 4. Validate age
         if (!Number.isInteger(Number(age)) || Number(age) < 1 || Number(age) > 120) {
             return res.status(400).json({
                 success: false,
@@ -242,7 +239,7 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
             });
         }
 
-        // 4. Prepare student data
+        // 5. Prepare student data
         const newUser = {
             name: name.trim(),
             age: Number(age),
@@ -252,7 +249,7 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
             photo: req.file.filename
         };
 
-        // 5. Insert student into database
+        // 6. Insert student into database
         const [result] = await db.query(
             `INSERT INTO student_details
             (name, age, course, mobile, roll_no, photo)
@@ -267,7 +264,7 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
             ]
         );
 
-        // 6. Send success response
+        // 7. Send success response
         return res.status(201).json({
             success: true,
             message: "Student added successfully",
@@ -278,21 +275,25 @@ app.post("/addUser", uploads.single("user_photo"), authenticateAdmin, async (req
         });
 
     } catch (error) {
+
         console.log("ADD USER ERROR:", error);
 
-        // 7. Handle duplicate values
-        if (error.code === "ER_DUP_ENTRY"){
+        // 8. Handle duplicate values
+        if (error.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
                 success: false,
                 message: "This roll number or another unique value already exists"
             });
         }
+
         // 9. Handle other errors
         return res.status(500).json({
             success: false,
             message: "Something went wrong while adding the student"
         });
+
     }
+
 });
 
 
@@ -421,8 +422,12 @@ app.patch("/edit/:roll", uploads.single("user_photo"), authenticateAdmin, async 
 
 
 
-const PORT = process.env.PORT || 5000;
+if (!process.env.VERCEL) {
+    const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-});
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+export default app;
