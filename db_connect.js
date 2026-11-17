@@ -1,17 +1,21 @@
+
 import mysql from "mysql2/promise";
 import "dotenv/config";
 
-
- export const db = await mysql.createConnection({
+export const db = await mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
+    password: process.env.DB_PASSWORD,
+    port: Number(process.env.DB_PORT),
+    database: process.env.DB_NAME,
+    ssl: {
+        minVersion: "TLSv1.2"
+    }
 });
 
-console.log("Connection Successfully done");
+console.log("TiDB Connection Successfully Done!");
 
 await db.query("CREATE DATABASE IF NOT EXISTS SRM");
-
 await db.query("USE SRM");
 
 await db.execute(`
@@ -24,8 +28,6 @@ await db.execute(`
         roll_no INT UNIQUE
     )
 `);
-
-
 
 await db.execute(`
     CREATE TABLE IF NOT EXISTS admins_details (
@@ -40,3 +42,4 @@ await db.execute(`
     )
 `);
 
+console.log("SRM Tables Created Successfully!");
