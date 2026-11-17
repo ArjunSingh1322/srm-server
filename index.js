@@ -184,7 +184,7 @@ app.post("/admin/login", async (req, res) => {
 
 
 
-
+console.log("hello baby");
 
 
 app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req, res) => {
