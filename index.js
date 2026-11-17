@@ -6,7 +6,7 @@ import cors from "cors";
 import "dotenv/config";
 import multer from "multer";
 import path from "path"
-
+import uploads from "./utilities/upload.js";
 // console.log(process.env.JWT_SECRET)
 
 let data = [
@@ -30,25 +30,11 @@ let app = express();
 let port = 5000;
 
 
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        return cb(null, "./uploads")
-    },
-    filename: function (req, file, cb) {
-        return cb(null, `${Date.now()} - ${file.originalname}`)
-    }
-})
-
-
-const uploads = multer({ storage })
-
-
-
-
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));   // ← add this
+
+
 const authenticateAdmin = (req, res, next) => {
 
     try {
@@ -86,13 +72,9 @@ const authenticateAdmin = (req, res, next) => {
     }
 };
 
-
-
 app.get("/", (req, res) => {
     res.send("App is Running");
 });
-
-
 
 app.post("/signup", async (req, res) => {
 
@@ -142,9 +124,6 @@ app.post("/signup", async (req, res) => {
     }
 
 });
-
-
-
 
 app.post("/admin/login", async (req, res) => {
 
@@ -212,10 +191,8 @@ app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req
 
     try {
 
-        // 1. Get form data
         const { name, age, course, mobile, roll_no } = req.body;
 
-        // 2. Check required fields
         if (!name || !age || !course || !mobile || !roll_no) {
             return res.status(400).json({
                 success: false,
@@ -223,7 +200,6 @@ app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req
             });
         }
 
-        // 3. Check student photo
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -231,7 +207,6 @@ app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req
             });
         }
 
-        // 4. Validate age
         if (!Number.isInteger(Number(age)) || Number(age) < 1 || Number(age) > 120) {
             return res.status(400).json({
                 success: false,
@@ -239,17 +214,15 @@ app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req
             });
         }
 
-        // 5. Prepare student data
         const newUser = {
             name: name.trim(),
             age: Number(age),
             course: course.trim(),
             mobile: mobile.trim(),
             roll_no: roll_no.trim(),
-            photo: req.file.filename
+            photo: req.file.path
         };
 
-        // 6. Insert student into database
         const [result] = await db.query(
             `INSERT INTO student_details
             (name, age, course, mobile, roll_no, photo)
