@@ -1,6 +1,19 @@
-
 import mysql from "mysql2/promise";
 import "dotenv/config";
+
+// Initial connection without database
+const initialDb = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    port: Number(process.env.DB_PORT),
+    ssl: {
+        minVersion: "TLSv1.2"
+    }
+});
+
+await initialDb.query("CREATE DATABASE IF NOT EXISTS SRM");
+await initialDb.end();
 
 export const db = await mysql.createConnection({
     host: process.env.DB_HOST,
@@ -15,7 +28,6 @@ export const db = await mysql.createConnection({
 
 console.log("TiDB Connection Successfully Done!");
 
-await db.query("CREATE DATABASE IF NOT EXISTS SRM");
 await db.query("USE SRM");
 
 await db.execute(`
@@ -25,7 +37,8 @@ await db.execute(`
         age INT,
         course VARCHAR(50),
         mobile BIGINT UNIQUE,
-        roll_no INT UNIQUE
+        roll_no INT UNIQUE,
+        photo VARCHAR(255)
     )
 `);
 

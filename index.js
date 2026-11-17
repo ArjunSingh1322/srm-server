@@ -356,7 +356,7 @@ app.patch("/edit/:roll", uploads.single("user_photo"), authenticateAdmin, async 
             course: req.body.course,
             mobile: req.body.mobile,
             roll_no: req.body.roll_no,
-            photo:req.file.filename
+            photo: req.file ? req.file.path : null
         };
 
         let [result] = await db.execute(
