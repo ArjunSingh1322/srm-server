@@ -392,6 +392,25 @@ app.patch("/edit/:roll", uploads.single("user_photo"), authenticateAdmin, async 
     }
 
 });
+app.get("/health", async (req, res) => {
+    try {
+        const [result] = await db.query("SELECT 1");
+
+        res.status(200).json({
+            success: true,
+            message: "Backend and Database Connected",
+            database: "Connected"
+        });
+
+    } catch (error) {
+        console.error("Health Check Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Database Connection Failed"
+        });
+    }
+});
 
 
 
