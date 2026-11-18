@@ -237,7 +237,7 @@ app.post("/addUser", authenticateAdmin, uploads.single("user_photo"), async (req
             ]
         );
 
-        // 7. Send success response
+    
         return res.status(201).json({
             success: true,
             message: "Student added successfully",

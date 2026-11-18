@@ -38,7 +38,7 @@ await db.execute(`
         course VARCHAR(50),
         mobile BIGINT UNIQUE,
         roll_no INT UNIQUE,
-        photo VARCHAR(255),
+        photo VARCHAR(255)
     )
 `);
 
