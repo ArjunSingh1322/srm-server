@@ -27,7 +27,6 @@ let data = [
 ];
 
 let app = express();
-let port = 5000;
 
 
 app.use(cors());
@@ -170,15 +169,16 @@ app.post("/admin/login", async (req, res) => {
             token: token
         });
 
-    } catch (error) {
+    } 
+    
+    catch (error) {
+    console.error("LOGIN ERROR DETAILS:", error);
 
-        console.log("Login Error");
-
-        res.status(500).json({
-            message: "Internal server error"
-        });
-
-    }
+    res.status(500).json({
+        success: false,
+        message: "Login failed"
+    });
+}
 
 });
 
@@ -392,6 +392,51 @@ app.patch("/edit/:roll", uploads.single("user_photo"), authenticateAdmin, async 
     }
 
 });
+
+
+app.get("/analytics", async (req, res) => {
+    try {
+        const { year, month, day } = req.query;
+
+        let sql = `
+            SELECT *
+            FROM student_details
+            WHERE 1=1
+        `;
+
+        let values = [];
+
+        if (year) {
+            sql += ` AND YEAR(created_at) = ?`;
+            values.push(year);
+        }
+
+        if (month) {
+            sql += ` AND MONTH(created_at) = ?`;
+            values.push(month);
+        }
+
+        if (day) {
+            sql += ` AND DAY(created_at) = ?`;
+            values.push(day);
+        }
+
+        const [result] = await db.query(sql, values);
+
+        res.status(200).json({
+            success: true,
+            total: result.length,
+            data: result
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 app.get("/health", async (req, res) => {
     try {
         const [result] = await db.query("SELECT 1");
