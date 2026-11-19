@@ -437,6 +437,105 @@ app.get("/analytics", async (req, res) => {
     }
 });
 
+import XLSX from "xlsx";
+
+app.get("/export-students", authenticateAdmin, async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        // Check if dates are provided
+        if (!startDate || !endDate) {
+            return res.status(400).json({
+                message: "Please select both dates"
+            });
+        }
+
+        // Check date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+        if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+            return res.status(400).json({
+                message: "Date format must be YYYY-MM-DD"
+            });
+        }
+
+        // Check if dates are valid
+        if (
+            new Date(startDate).toISOString().slice(0, 10) !== startDate ||
+            new Date(endDate).toISOString().slice(0, 10) !== endDate
+        ) {
+            return res.status(400).json({
+                message: "Invalid date"
+            });
+        }
+
+        // Check date range
+        if (startDate > endDate) {
+            return res.status(400).json({
+                message: "Start date must be before end date"
+            });
+        }
+
+        // Fetch students
+        const sql = `
+            SELECT id, name, roll_no, course, mobile, created_at
+            FROM student_details
+            WHERE created_at >= ?
+            AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+            ORDER BY created_at ASC
+        `;
+
+        const [students] = await db.query(sql, [
+            startDate,
+            endDate
+        ]);
+
+        // Check data
+        if (students.length === 0) {
+            return res.status(404).json({
+                message: "No students found for these dates"
+            });
+        }
+
+        // Create Excel sheet
+        const worksheet = XLSX.utils.json_to_sheet(students);
+
+        const workbook = XLSX.utils.book_new();
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+        // Generate Excel file
+        const buffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "buffer"
+        });
+
+        // Download file
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="students_${startDate}_to_${endDate}.xlsx"`
+        );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.send(buffer);
+
+    } catch (error) {
+        console.error("Export Error:", error.message);
+
+        res.status(500).json({
+            message: "Server error while exporting students"
+        });
+    }
+});
+
+
+
+
+
 app.get("/health", async (req, res) => {
     try {
         const [result] = await db.query("SELECT 1");
